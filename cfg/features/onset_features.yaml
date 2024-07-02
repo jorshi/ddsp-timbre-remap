@@ -1,0 +1,14 @@
+class_path: timbreremap.feature.CascadingFrameExtactor
+init_args:
+  extractors:
+    - class_path: timbreremap.feature.RMS
+      init_args:
+        db: True
+    - class_path: timbreremap.feature.SpectralCentroid
+      init_args:
+        sample_rate: 44100
+    - class_path: timbreremap.feature.SpectralFlatness
+  num_frames:
+    - 1
+  frame_size: 256
+  hop_size: 256

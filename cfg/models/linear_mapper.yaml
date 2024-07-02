@@ -1,0 +1,8 @@
+class_path: timbreremap.model.LinearMapping
+init_args:
+  in_size: 3
+  out_size: 14
+  bias: false
+  input_bias: 0.0
+  clamp: true
+  init_std: 1e-6

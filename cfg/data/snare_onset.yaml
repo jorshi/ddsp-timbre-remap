@@ -1,0 +1,10 @@
+class_path: timbreremap.data.OnsetFeatureDataModule
+init_args:
+  audio_path: "audio/sdss_filtered/Premier_BigFatSnare"
+  feature: ../features/onset_feature_full.yaml
+  onset_feature: ../features/onset_features.yaml
+  batch_size: 16
+  center_onset: true
+  val_split: 0.1
+  test_split: 0.1
+  return_norm: false

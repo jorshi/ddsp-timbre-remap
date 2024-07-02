@@ -1,0 +1,6 @@
+class_path: timbreremap.data.OnsetFeatureDataModule
+init_args:
+  audio_path: "audio/carson/popcorn_snare_damp.wav"
+  feature: ../features/onset_feature_full.yaml
+  onset_feature: ../features/onset_features.yaml
+  batch_size: 16

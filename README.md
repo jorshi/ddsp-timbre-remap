@@ -1,0 +1,81 @@
+<div align="center">
+
+# Real-time Timbre Remapping with Differentiable DSP
+
+
+[![Demo](https://img.shields.io/badge/Web-Audio_Examples-blue)](https://jordieshier.com/projects/nime2024/)
+[![Paper](https://img.shields.io/badge/PDF-Paper-green)](#)
+
+[Jordie Shier](https://jordieshier.com), [Charalampos Saitis](http://eecs.qmul.ac.uk/people/profiles/saitischaralampos.html), Andrew Robertson, and [Andrew McPherson](https://www.imperial.ac.uk/people/andrew.mcpherson)
+
+</div>
+
+This repository contains training code for our NIME 2024 paper *Real-time Timbre Remapping with Differentiable DSP*.
+This research explored the application of differentiable digital signal processing (DDSP) towards
+timbral control of an audio synthesizer. In this work we explored mapping timbral changes represented
+as audio features extracted from an input audio (i.e., drums) to synthesizer parameter modulations. To enable real-time control we introduced neural networks which learn
+to map from short windows of audio features extracted from a detected onset to synthesizer
+parameters. This allows for real-time control of a synthesizer from an audio input.
+
+
+## Install
+Clone the repo and then install the `timbreremap` package. Requires Python version 3.9 or greater.
+
+```bash
+pip install --upgrade pip
+pip install -e .
+```
+
+## Example Training and Inference
+
+Download snare drum performance audio:
+
+```bash
+mkdir audio
+cd audio
+wget https://pub-814e66019388451395cf43c0b6f10300.r2.dev/carson.zip
+unzip carson.zip
+cd ..
+```
+
+## Numerical Experiments
+
+Instructions to reproduce numerical results from the NIME 2024 paper.
+
+### Dataset
+
+Download the [Snare Drum Data Set (SDSS)](https://aes2.org/publications/elibrary-page/?id=20912).
+We used a subset of this dataset, which can be downloaded as follows:
+
+```bash
+mkdir audio
+cd audio
+wget https://pub-814e66019388451395cf43c0b6f10300.r2.dev/sdss_filtered.zip
+unzip sdss_filtered.zip
+```
+
+### Training
+
+The following scripts will run a series of trainings iterating over the snare drum
+dataset and five different synthesizer presets. In total, 240 models are trained for
+each mapping algorithm.
+Each model takes around 2min to train on a GPU, which means training all models will take around 24 hours.
+
+```bash
+./scripts/train_linear.sh && ./scripts/train_mlp.sh && ./scripts/train_mlp_lrg.sh
+```
+
+To run the baseline, which involves no neural network, just estimating the synthesis parameter directly using gradient descent:
+
+```bash
+./scripts/direct_optimize.sh
+```
+
+### Results
+To compile results from the numerical experiments into a summary table:
+
+```bash
+python scripts/results.py experiment
+```
+
+Which will output a file named `table.tex` with a table similar to the one presented in the paper.

@@ -1,0 +1,6 @@
+class_path: timbreremap.synth.Snare808
+init_args:
+  sample_rate: 44100
+  num_samples: 44100
+  buffer_noise: true
+  buffer_size: 44100

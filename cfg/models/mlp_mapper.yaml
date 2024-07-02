@@ -1,0 +1,11 @@
+class_path: timbreremap.model.MLP
+init_args:
+  in_size: 3
+  hidden_size: 32
+  out_size: 14
+  num_layers: 1
+  activation: torch.nn.ReLU
+  input_bias: 0.0
+  layer_norm: true
+  init_std: 0.001
+  scale_output: true

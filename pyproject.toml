@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["timbreremap"]
+
+[project]
+name = "timbreremap"
+version = "0.0.1"
+dependencies = [
+    "einops",
+    "jsonargparse[signatures]>=4.18.0",
+    "lightning==2.1.3",
+    "matplotlib",
+    "numba",
+    "numpy<2.0",
+    "pandas",
+    "pyloudnorm",
+    "scipy",
+    "torch==2.1.2",
+    "torchaudio",
+]
+
+[project.scripts]
+timbreremap = "timbreremap.cli:main"
+timbreremap-test = "timbreremap.cli:test_version"
+timbreremap-train-sdss = "timbreremap.cli:train_sdss"
+timbreremap-optuna = "timbreremap.optuna:run_optuna"
+timbreremap-direct = "timbreremap.cli:direct_optimization"
+timbreremap-optimize-sdss = "timbreremap.cli:optimize_sdss"
+
+[project.optional-dependencies]
+dev = [
+    "black[jupyter]",
+    "flake8",
+    "pytest",
+    "pytest-mock",
+    "pre-commit",
+    "pytest-cov",
+    "matplotlib",
+    "nbstripout",
+    "nbmake",
+    "ipywidgets",
+    "optuna",
+]

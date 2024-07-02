@@ -1,0 +1,32 @@
+model:
+  class_path: timbreremap.tasks.TimbreRemappingTask
+  init_args:
+    model: models/mlp_mapper.yaml
+    synth: synths/snare_808.yaml
+    feature: features/onset_feature_full.yaml
+    loss_fn: timbreremap.loss.FeatureDifferenceLoss
+    preset: cfg/presets/808_snare_1.json
+optimizer:
+  class_path: torch.optim.Adam
+  init_args:
+    lr: 0.0005
+lr_scheduler:
+  class_path: lightning.pytorch.cli.ReduceLROnPlateau
+  init_args:
+    monitor: val/loss
+    factor: 0.5
+    patience: 20
+    verbose: true
+data: data/snare_onset.yaml
+trainer:
+  devices: 1
+  accelerator: gpu
+  # accelerator: cpu
+  max_epochs: 250
+  callbacks:
+    - class_path: timbreremap.callback.SaveAudioCallback
+    - class_path: timbreremap.callback.SaveTorchScriptCallback
+    - class_path: lightning.pytorch.callbacks.LearningRateMonitor
+      init_args:
+        logging_interval: step
+seed_everything: 3608013887
