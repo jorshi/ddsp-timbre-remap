@@ -10,12 +10,14 @@
 
 </div>
 
-This repository contains training code for our NIME 2024 paper *Real-time Timbre Remapping with Differentiable DSP*.
-This research explored the application of differentiable digital signal processing (DDSP) towards
-timbral control of an audio synthesizer. In this work we explored mapping timbral changes represented
-as audio features extracted from an input audio (i.e., drums) to synthesizer parameter modulations. To enable real-time control we introduced neural networks which learn
-to map from short windows of audio features extracted from a detected onset to synthesizer
-parameters. This allows for real-time control of a synthesizer from an audio input.
+This repository contains training code for our *Real-time Timbre Remapping with Differentiable DSP*, presented at NIME 2024.
+This research explores the application of differentiable digital signal processing (DDSP) towards
+timbral control of an audio synthesizer. 
+
+Audio features are extracted from input percussive audio (i.e., drums) at detected onsets and are mapped
+to synthesizer parameter modulations using neural networks. There neural networks are trained to estimated parameter modulations that result in desired timbral and dynamic modulations for a differentiable drum synth based on the Roland TR-808.
+
+**Coming Soon** -- export trained models and load them in an audio plug-in for real-time timbre remapping.
 
 
 ## Install
