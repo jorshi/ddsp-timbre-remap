@@ -4,7 +4,7 @@
 
 
 [![Demo](https://img.shields.io/badge/Web-Audio_Examples-blue)](https://jordieshier.com/projects/nime2024/)
-[![Paper](https://img.shields.io/badge/PDF-Paper-green)](#)
+[![Paper](https://img.shields.io/badge/PDF-Paper-green)](http://instrumentslab.org/data/andrew/shier_nime2024.pdf)
 
 [Jordie Shier](https://jordieshier.com), [Charalampos Saitis](http://eecs.qmul.ac.uk/people/profiles/saitischaralampos.html), Andrew Robertson, and [Andrew McPherson](https://www.imperial.ac.uk/people/andrew.mcpherson)
 
@@ -28,21 +28,15 @@ pip install --upgrade pip
 pip install -e .
 ```
 
-## Example Training and Inference
+## Examples
 
-Download snare drum performance audio:
+**Coming soon**
 
-```bash
-mkdir audio
-cd audio
-wget https://pub-814e66019388451395cf43c0b6f10300.r2.dev/carson.zip
-unzip carson.zip
-cd ..
-```
 
 ## Numerical Experiments
 
-Instructions to reproduce numerical results from the NIME 2024 paper.
+Instructions to reproduce numerical results from the NIME 2024 paper. The included
+scripts require a GPU to run.
 
 ### Dataset
 
