@@ -10,8 +10,8 @@
 
 </div>
 
-This repository contains training code for our paper *Real-time Timbre Remapping with Differentiable DSP*, accepted for publication at NIME 2024.
-This work explores the application of differentiable digital signal processing (DDSP) for
+This repository contains training code for our paper *Real-time Timbre Remapping with Differentiable DSP*, 
+which explored the application of differentiable digital signal processing (DDSP) for
 audio-driven control of a synthesizer.
 
 Audio features extracted from input percussive audio (i.e., drums) at detected onsets are mapped
@@ -35,7 +35,6 @@ pip install -e .
 ## Examples
 
 **Coming soon**
-
 
 ## Numerical Experiments
 
