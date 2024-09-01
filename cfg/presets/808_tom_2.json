@@ -1,0 +1,22 @@
+{
+    "preset": {
+        "osc1.freq": 103.85,
+        "osc1.mod": 1.11,
+        "osc2.freq": 327.0,
+        "osc2.mod": 0.27,
+        "freq_env.decay": 56.0,
+        "osc1_env.decay": 680.0,
+        "osc2_env.decay": 71.18,
+        "noise_env.decay": 10.0,
+        "noise_filter.freq": 7800.0,
+        "noise_filter.q": 3.27,
+        "osc1_gain.gain": -6.0,
+        "osc2_gain.gain": -18.0,
+        "noise_gain.gain": -50.0,
+        "tanh.in_gain": 3.11
+    },
+    "damping": {
+        "osc1.freq": 0.01,
+        "osc2.freq": 0.01
+    }
+}
