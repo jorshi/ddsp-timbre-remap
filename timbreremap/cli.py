@@ -163,13 +163,21 @@ def direct_optimization(output=None):
     return
 
 
-def _optimize_synth(model: L.LightningModule, target: torch.Tensor):
+def _optimize_synth(
+    model: L.LightningModule,
+    target: torch.Tensor,
+    iterations: int = 1000,
+    norm: torch.Tensor = None,
+):
     """
     Optimize the synthesis parameters to match a feature target
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     target = target.to(device)
+    norm = (
+        torch.ones(target.shape[0], device=device) if norm is None else norm.to(device)
+    )
 
     synth = model.synth
     preset = model.preset
@@ -185,7 +193,7 @@ def _optimize_synth(model: L.LightningModule, target: torch.Tensor):
         optimizer, patience=50, factor=0.5, verbose=True
     )
 
-    pbar = tqdm(range(1000))
+    pbar = tqdm(range(iterations))
     for i in pbar:
         optimizer.zero_grad()
 
@@ -195,7 +203,8 @@ def _optimize_synth(model: L.LightningModule, target: torch.Tensor):
         y = synth(params)
         y_features = model.feature(y)
 
-        loss = model.loss_fn(y_features, reference, target)
+        loss = model.loss_fn(y_features, reference, target, norm)
+        loss += 0.05 * torch.norm(modulation, p=1)
         loss.backward()
         optimizer.step()
 
@@ -206,3 +215,5 @@ def _optimize_synth(model: L.LightningModule, target: torch.Tensor):
     diff = y_features - reference
     for i, (k, v) in enumerate(model.feature_metrics.items()):
         v.update(diff[..., i], target[..., i])
+
+    return modulation

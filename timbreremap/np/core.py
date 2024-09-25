@@ -160,7 +160,9 @@ class OnsetFrames:
 
                 # Apply a fade out to the end of the frame
                 fade = np.hanning(self.overlap_buffer * 2)[self.overlap_buffer :]
-                frame[-self.overlap_buffer :] *= fade
+                frame[-self.overlap_buffer :] *= fade[
+                    : frame.shape[-1] - self.overlap_buffer
+                ]
             else:
                 frame = x[0, start : start + self.frame_size]
 

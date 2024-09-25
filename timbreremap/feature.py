@@ -282,6 +282,7 @@ class SpectralCentroid(torch.nn.Module):
             )
         elif self.scaling == "kazazis":
             spectral_centroid = -34.61 * torch.pow(spectral_centroid, -0.1621) + 21.2985
+            spectral_centroid = torch.nan_to_num(spectral_centroid, nan=0.0, posinf=0.0, neginf=0.0)
 
         return spectral_centroid
 
@@ -456,6 +457,52 @@ class TemporalCentroid(torch.nn.Module):
         if self.scaling == "schlauch":
             y = 0.03 * torch.pow(y, 1.864)
         return y
+
+
+class MFCC(torch.nn.Module):
+    """
+    Mel-frequency cepstral coefficients.
+    """
+
+    def __init__(
+        self,
+        sample_rate: int,
+        n_mfcc: int = 13,
+        n_mels: int = 128,
+        window: Literal["hann", "flat_top", "none"] = "hann",
+        compress: bool = False,
+        floor: float = None,  # Floor spectral magnitudes to this value
+    ):
+        super().__init__()
+        self.sample_rate = sample_rate
+        self.n_mfcc = n_mfcc
+        self.n_mels = n_mels
+        self.window_fn = get_window_fn(window)
+        self.compress = compress
+        self.floor = floor
+
+    def forward(self, x: torch.Tensor):
+        # Apply a window
+        if self.window_fn is not None:
+            window = self.window_fn(x.shape[-1], device=x.device)
+            x = x * window
+
+        # Calculate FFT
+        X = torch.fft.rfft(x, dim=-1)
+        X = torch.abs(X)
+
+        fb = torchaudio.functional.melscale_fbanks(
+            X.shape[-1], 0.0, self.sample_rate / 2, self.n_mels, self.sample_rate
+        )
+        mel_scale = torch.matmul(X, fb.to(X.device))
+        mel_scale = torch.log(mel_scale + 1e-6)
+
+        dct_mat = torchaudio.functional.create_dct(
+            self.n_mfcc, self.n_mels, norm="ortho"
+        )
+        mfcc = torch.matmul(mel_scale, dct_mat.to(mel_scale.device))
+
+        return mfcc[..., 1:]
 
 
 class NormSum(torch.nn.Module):

@@ -84,18 +84,19 @@ class OnsetFeatureDataModule(L.LightningDataModule):
         self.test_split = test_split
         self.data_seed = data_seed
 
-    def prepare_data(self) -> None:
+    def prepare_data(self, ref_idx: Optional[int] = None) -> None:
         """
         Load the audio file and prepare the dataset
         """
         # Calculate the onset frames
+        # TODO: make the onset frames configurable
         onset_frames = OnsetFrames(
             self.sample_rate,
             frame_size=self.sample_rate,
-            on_thresh=10.0,
-            wait=10000,
+            on_thresh=16.0,
+            wait=1323,
             backtrack=16,
-            overlap_buffer=1024,
+            overlap_buffer=512,
         )
 
         # Load audio files from a directory
@@ -109,8 +110,13 @@ class OnsetFeatureDataModule(L.LightningDataModule):
                 x, sr = torchaudio.load(f)
 
                 # Resample if necessary
+                # TODO: create a separate pre-processing method
                 if sr != self.sample_rate:
                     x = torchaudio.transforms.Resample(sr, self.sample_rate)(x)
+
+                # Convert stereo to mono
+                if x.shape[0] > 1:
+                    x = x.mean(dim=0, keepdim=True)
 
                 # Onset detection and frame extraction to ensure all audio
                 # is the same length and is aligned at an onset
@@ -128,6 +134,10 @@ class OnsetFeatureDataModule(L.LightningDataModule):
             if sr != self.sample_rate:
                 x = torchaudio.transforms.Resample(sr, self.sample_rate)(x)
 
+            # Convert stereo to mono
+            if x.shape[0] > 1:
+                x = x.mean(dim=0, keepdim=True)
+
             # Onset detection and frame extraction
             audio = onset_frames(x)
             audio = torch.from_numpy(audio).float()
@@ -143,11 +153,17 @@ class OnsetFeatureDataModule(L.LightningDataModule):
         # Compute full features
         self.full_features = self.feature(audio)
         loudsort = torch.argsort(self.full_features[:, 0], descending=True)
-        idx = int(len(loudsort) * 0.5)
-        idx = loudsort[idx]
 
-        # Cache the index of the reference sample
+        # Use the reference index if provided
+        if ref_idx is not None:
+            idx = ref_idx
+        else:
+            idx = int(len(loudsort) * 0.5)
+            idx = loudsort[idx]
+
+        # Cache the index of the reference sample and sort of the samples
         self.ref_idx = idx
+        self.loudsort = loudsort
 
         # Compute the difference between the features of each audio and the centroid
         self.diff = self.full_features - self.full_features[idx]
