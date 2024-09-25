@@ -282,7 +282,9 @@ class SpectralCentroid(torch.nn.Module):
             )
         elif self.scaling == "kazazis":
             spectral_centroid = -34.61 * torch.pow(spectral_centroid, -0.1621) + 21.2985
-            spectral_centroid = torch.nan_to_num(spectral_centroid, nan=0.0, posinf=0.0, neginf=0.0)
+            spectral_centroid = torch.nan_to_num(
+                spectral_centroid, nan=0.0, posinf=0.0, neginf=0.0
+            )
 
         return spectral_centroid
 
