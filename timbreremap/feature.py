@@ -118,7 +118,11 @@ class CascadingFrameExtactor(torch.nn.Module):
         y = self.get_as_dict(x)
         flattened_y = []
         for extractor, feature in self.flattened_features:
-            flattened_y.append(y[extractor][feature].unsqueeze(-1))
+            if y[extractor][feature].shape[-1] > 1:
+                x = torch.split(y[extractor][feature], 1, dim=-1)
+                flattened_y.extend(torch.split(y[extractor][feature], 1, dim=-1))
+            else:
+                flattened_y.append(y[extractor][feature])
 
         return torch.cat(flattened_y, dim=-1)
 
@@ -143,6 +147,11 @@ class CascadingFrameExtactor(torch.nn.Module):
             for n in self.num_frames:
                 frames = x[..., k : k + n, :]
                 y = extractor(frames)
+
+                if y.ndim == 3:
+                    y = y.swapaxes(1, 2)
+                elif y.ndim == 2:
+                    y = y.unsqueeze(-2)
 
                 if self.include_mean:
                     y_mean = y.mean(dim=-1)
