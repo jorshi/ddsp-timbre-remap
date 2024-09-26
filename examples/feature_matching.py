@@ -31,6 +31,8 @@ from timbreremap.tasks import TimbreRemappingTask
 # %load_ext autoreload
 # %autoreload 2
 
+Path("results").mkdir(exist_ok=True)
+
 argparser = argparse.ArgumentParser()
 argparser.add_argument(
     "--data_path", type=str, default="audio/carson_gant_drums/performance.wav"
@@ -110,21 +112,14 @@ for i, audio in enumerate(data.audio):
     idx = idx_map.index(i)
     feat = dataset[idx][1][None, ...]
     feats.append(feat)
-    ipd.display(ipd.Audio(audio.squeeze().numpy(), rate=sample_rate))
+    # ipd.display(ipd.Audio(audio.squeeze().numpy(), rate=sample_rate))
 
 feats = torch.cat(feats, dim=0)
+num_features = feats.shape[-1]
 
 # +
 labels = [f"{k[0]}:{k[1]}" for f in extractor.features for k in f.flattened_features]
 print(len(labels))
-
-# create subplots for each feature
-# fig, axs = plt.subplots(feats.shape[-1], 1, figsize=(10, 3 * feats.shape[-1]))
-# for i in range(feats.shape[-1]):
-#     axs[i].plot(feats[:, i].numpy())
-#     axs[i].set_title(labels[i])
-
-# plt.tight_layout()
 
 # +
 synth = Snare808(
@@ -139,7 +134,6 @@ preset = f"../cfg/presets/{preset}"
 
 parameters, _ = synth.load_params_json(preset)
 audio = synth(parameters)
-ipd.Audio(audio, rate=sample_rate)
 # -
 
 # # Create a set of modulated presets
@@ -170,12 +164,6 @@ def run_optimization(task, target, ref_idx=None, iterations=100, target_scale=1.
         modulations.append(modulation)
 
     return modulations, torch.cat(target_features, dim=0)
-
-
-modulations, target_features = run_optimization(task, feats, ref_idx=0, iterations=10)
-
-
-# -
 
 
 def resynthesize(mods, synth):
@@ -213,12 +201,6 @@ def resynthesize(mods, synth):
 
 
 # +
-resynth, synth_features, idx_order = resynthesize(modulations, synth)
-
-ipd.Audio(resynth.detach().cpu().numpy(), rate=sr)
-
-
-# +
 def plot_features(target_features, synth_features, idx_order, extractor):
     # create subplots for each feature
     labels = [
@@ -237,59 +219,170 @@ def plot_features(target_features, synth_features, idx_order, extractor):
     return fig
 
 
-fig = plot_features(target_features, synth_features, idx_order, extractor)
 # -
+# Anchor swap experiment
+def anchor_swap_experiment():
+    audios = []
+    for i in range(len(dataset)):
+        print(f"Optimizing for {i}")
+        modulations, y_feat = run_optimization(
+            task, feats, ref_idx=i, iterations=N_ITERS
+        )
+        resynth, y_hat_feat, idx = resynthesize(modulations, synth)
+        audios.append(resynth.detach().cpu())
 
-audios = []
-for i in range(len(dataset)):
-    print(f"Optimizing for {i}")
-    modulations, y_feat = run_optimization(task, feats, ref_idx=i, iterations=N_ITERS)
-    resynth, y_hat_faat, idx = resynthesize(modulations, synth)
-    audios.append(resynth.detach().cpu())
+        # add half a second of silence between each onset
+        audios.append(torch.zeros_like(resynth[:, : int(sample_rate / 2)]).cpu())
 
-    output = Path(f"results/anchor_swap_{Path(data_path).stem}_{i}.png")
-    fig = plot_features(y_feat, y_hat_faat, idx, extractor)
-    fig.savefig(output, dpi=150)
-    plt.close(fig)
+        # Calculate L1 error on features
+        error = (y_feat[idx] - y_hat_feat).abs().mean()
+        print(f"Error: {error}")
 
-    torchaudio.save(output.with_suffix(".wav"), resynth.detach().cpu(), sample_rate)
+        output = Path(
+            f"results/anchor_swap_{Path(data_path).stem}_{i}_e{error:.2f}.png"
+        )
+        fig = plot_features(y_feat, y_hat_feat, idx, extractor)
+        fig.savefig(output, dpi=150)
+        plt.close(fig)
 
-# +
-audio_tensor = torch.hstack(audios[0:])
+        torchaudio.save(output.with_suffix(".wav"), resynth.detach().cpu(), sample_rate)
 
-output = Path(f"results/anchor_swap_{Path(data_path).stem}_concat.wav")
-torchaudio.save(output, audio_tensor, sample_rate)
+    # +
+    audio_tensor = torch.hstack(audios)
 
-ipd.display(ipd.Audio(audio_tensor.squeeze().numpy(), rate=sample_rate))
-ipd.display(ipd.Audio(drums.squeeze().numpy(), rate=sample_rate))
+    output = Path(f"results/anchor_swap_{Path(data_path).stem}_concat.wav")
+    torchaudio.save(output, audio_tensor, sample_rate)
+
+
 # -
+# Scaling experiment
 
-scale = torch.hstack([torch.linspace(0.0, 1.0, 4), torch.linspace(1.0, 10.0, 4)])
-print(scale)
 
-# +
-audios = []
+def scale_experiment():
+    scale = torch.hstack([torch.linspace(0.0, 0.75, 5), torch.linspace(1.0, 5.0, 5)])
+    print(scale)
 
-for i in range(len(scale)):
-    print(f"Optimizing for {i}")
-    modulations, y_feat = run_optimization(
-        task, feats, ref_idx=0, iterations=N_ITERS, target_scale=scale[i]
+    # +
+    audios = []
+
+    for i in range(len(scale)):
+        print(f"Optimizing for scale {scale[i]}")
+        modulations, y_feat = run_optimization(
+            task, feats, ref_idx=None, iterations=N_ITERS, target_scale=scale[i]
+        )
+        resynth, y_hat_feat, idx = resynthesize(modulations, synth)
+        audios.append(resynth.detach().cpu())
+
+        # add half a second of silence between each onset
+        audios.append(torch.zeros_like(resynth[:, : int(sample_rate / 2)]).cpu())
+
+        # Calculate L1 error on features
+        error = (y_feat[idx] - y_hat_feat).abs().mean()
+        print(f"Error: {error}")
+
+        output = Path(
+            f"results/target_scale_{Path(data_path).stem}_{scale[i]:.2f}_e{error:.2f}.png"
+        )
+        fig = plot_features(y_feat, y_hat_feat, idx, extractor)
+        fig.savefig(output, dpi=150)
+        plt.close(fig)
+
+        torchaudio.save(output.with_suffix(".wav"), resynth.detach().cpu(), sample_rate)
+
+    # +
+    audio_tensor = torch.hstack(audios[0:])
+
+    output = Path(f"results/target_scale_{Path(data_path).stem}_concat.wav")
+    torchaudio.save(output, audio_tensor, sample_rate)
+
+
+# Inverse scaling experiment
+def inverse_scale_experiment():
+    scale = (
+        torch.hstack([torch.linspace(0.0, 0.75, 5), torch.linspace(1.0, 5.0, 5)]) * -1
     )
-    resynth, y_hat_faat, idx = resynthesize(modulations, synth)
-    audios.append(resynth.detach().cpu())
+    print(scale)
 
-    output = Path(f"results/target_scale_{Path(data_path).stem}_{i}.png")
-    fig = plot_features(y_feat, y_hat_faat, idx, extractor)
-    fig.savefig(output, dpi=150)
-    plt.close(fig)
+    # +
+    audios = []
 
-    torchaudio.save(output.with_suffix(".wav"), resynth.detach().cpu(), sample_rate)
+    for i in range(len(scale)):
+        print(f"Optimizing for scale {scale[i]}")
+        modulations, y_feat = run_optimization(
+            task, feats, ref_idx=None, iterations=N_ITERS, target_scale=scale[i]
+        )
+        resynth, y_hat_feat, idx = resynthesize(modulations, synth)
+        audios.append(resynth.detach().cpu())
 
-# +
-audio_tensor = torch.hstack(audios[0:])
+        # add half a second of silence between each onset
+        audios.append(torch.zeros_like(resynth[:, : int(sample_rate / 2)]).cpu())
 
-output = Path(f"results/target_scale_{Path(data_path).stem}_concat.wav")
-torchaudio.save(output, audio_tensor, sample_rate)
+        # Calculate L1 error on features
+        error = (y_feat[idx] - y_hat_feat).abs().mean()
+        print(f"Error: {error}")
 
-ipd.display(ipd.Audio(audio_tensor.squeeze().numpy(), rate=sample_rate))
-ipd.display(ipd.Audio(drums.squeeze().numpy(), rate=sample_rate))
+        output = Path(
+            f"results/target_inv_scale_{Path(data_path).stem}_{scale[i]:.2f}_e{error:.2f}.png"
+        )
+        fig = plot_features(y_feat, y_hat_feat, idx, extractor)
+        fig.savefig(output, dpi=150)
+        plt.close(fig)
+
+        torchaudio.save(output.with_suffix(".wav"), resynth.detach().cpu(), sample_rate)
+
+    # +
+    audio_tensor = torch.hstack(audios[0:])
+
+    output = Path(f"results/target_inv_scale_{Path(data_path).stem}_concat.wav")
+    torchaudio.save(output, audio_tensor, sample_rate)
+
+
+# -
+# Timbre Only Scaling experiment
+def timbre_only_scale_experiment():
+    scale = torch.hstack([torch.linspace(0.0, 0.75, 5), torch.linspace(1.0, 5.0, 5)])
+    print(scale)
+
+    # +
+    audios = []
+
+    for i in range(len(scale)):
+        print(f"Optimizing for timbre only scale {scale[i]}")
+        target_scale = torch.ones(num_features) * scale[i]
+        target_scale[:2] = 1.0
+        print(target_scale)
+
+        modulations, y_feat = run_optimization(
+            task, feats, ref_idx=None, iterations=N_ITERS, target_scale=target_scale
+        )
+        resynth, y_hat_feat, idx = resynthesize(modulations, synth)
+        audios.append(resynth.detach().cpu())
+
+        # add half a second of silence between each onset
+        audios.append(torch.zeros_like(resynth[:, : int(sample_rate / 2)]).cpu())
+
+        # Calculate L1 error on features
+        error = (y_feat[idx] - y_hat_feat).abs().mean()
+        print(f"Error: {error}")
+
+        output = Path(
+            f"results/timbre_target_scale_{Path(data_path).stem}_{scale[i]:.2f}_e{error:.2f}.png"
+        )
+        fig = plot_features(y_feat, y_hat_feat, idx, extractor)
+        fig.savefig(output, dpi=150)
+        plt.close(fig)
+
+        torchaudio.save(output.with_suffix(".wav"), resynth.detach().cpu(), sample_rate)
+
+    # +
+    audio_tensor = torch.hstack(audios[0:])
+
+    output = Path(f"results/timbre_target_scale_{Path(data_path).stem}_concat.wav")
+    torchaudio.save(output, audio_tensor, sample_rate)
+
+
+# Run experiments
+anchor_swap_experiment()
+scale_experiment()
+inverse_scale_experiment()
+timbre_only_scale_experiment()
