@@ -15,7 +15,6 @@
 import argparse
 from pathlib import Path
 
-import IPython.display as ipd
 import matplotlib.pyplot as plt
 import torch
 import torchaudio
