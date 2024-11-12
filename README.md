@@ -5,12 +5,13 @@
 
 [![Demo](https://img.shields.io/badge/Web-Audio_Examples-blue)](https://jordieshier.com/projects/nime2024/)
 [![Paper](https://img.shields.io/badge/PDF-Paper-green)](http://instrumentslab.org/data/andrew/shier_nime2024.pdf)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1nwV5y2eYiCF9YIM1BSmKU9uiPBbw9OxV?usp=sharing)
 
 [Jordie Shier](https://jordieshier.com), [Charalampos Saitis](http://eecs.qmul.ac.uk/people/profiles/saitischaralampos.html), Andrew Robertson, and [Andrew McPherson](https://www.imperial.ac.uk/people/andrew.mcpherson)
 
 </div>
 
-This repository contains training code for our paper *Real-time Timbre Remapping with Differentiable DSP*, 
+This repository contains training code for our paper *Real-time Timbre Remapping with Differentiable DSP*,
 which explored the application of differentiable digital signal processing (DDSP) for
 audio-driven control of a synthesizer.
 
@@ -21,8 +22,8 @@ estimation of synthesizer parameters based on audio features extracted from synt
 
 For more details on the research check out the [paper](http://instrumentslab.org/data/andrew/shier_nime2024.pdf) and listen to examples on the [research webpage](https://jordieshier.com/projects/nime2024/).
 
-**Coming Soon** -- export trained models and load them in an audio plug-in for real-time timbre remapping.
-
+[TorchDrum](https://github.com/jorshi/torchdrum-plugin) -- export trained models into an
+audio plug-in we developed alongside this research for real-time timbre remapping in your DAW.
 
 ## Install
 Clone the repo and then install the `timbreremap` package. Requires Python version 3.9 or greater.
@@ -34,11 +35,18 @@ pip install -e .
 
 ## Examples
 
-**Coming soon**
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1nwV5y2eYiCF9YIM1BSmKU9uiPBbw9OxV?usp=sharing)
+
+**Training a model**
+
+Example of training a new mapping model on the cpu for 50 epochs. Replace `audio/nime-demo/break.wav` with your own audio file (or folder of audio files). Results will be saved in a directoy called `lightning_logs` ordered by versions, which will include a compiled mapping model in the `torchscript` folder.
+```bash
+timbreremap fit -c cfg/onset_mapping_808.yaml --data.audio_path audio/nime-demo/break.wav --trainer.accelerator cpu --trainer.max_epochs 50
+```
 
 ## Numerical Experiments
 
-Instructions to reproduce numerical results from the NIME 2024 paper. The included
+Instructions to reproduce numerical results from the [NIME 2024 paper](https://arxiv.org/abs/2407.04547). The included
 scripts require a GPU to run.
 
 ### Dataset
