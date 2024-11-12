@@ -174,3 +174,57 @@ class OnsetFrames:
             frames.append(frame)
 
         return np.array(frames)
+
+
+class KWeightingFilter:
+    """
+    K-Weighting Filter
+    """
+
+    def __init__(self, sr: int):
+        self.sr = sr
+        self._init_filter()
+
+    def _init_filter(self):
+        # Shelving filter coefficients
+        f0 = 1681.974450955533
+        G = 3.999843853973347
+        Q = 0.7071752369554196
+
+        K = np.tan(np.pi * f0 / self.sr)
+        Vh = np.power(10.0, G / 20.0)
+        Vb = np.power(Vh, 0.4996667741545416)
+
+        shelvB = np.zeros(3)
+        shelvA = np.zeros(3)
+        shelvA[0] = 1.0
+
+        a0 = 1.0 + K / Q + K * K
+        shelvB[0] = (Vh + Vb * K / Q + K * K) / a0
+        shelvB[1] = 2.0 * (K * K - Vh) / a0
+        shelvB[2] = (Vh - Vb * K / Q + K * K) / a0
+        shelvA[1] = 2.0 * (K * K - 1.0) / a0
+        shelvA[2] = (1.0 - K / Q + K * K) / a0
+
+        self.shelvB = shelvB
+        self.shelvA = shelvA
+
+        # High-pass filter coefficients
+        f0 = 38.13547087602444
+        Q = 0.5003270373238773
+        K = np.tan(np.pi * f0 / self.sr)
+
+        hiB = np.array([0.9946, -1.9892,  0.9946])
+        hiA = np.array([1.0, 0.0, 0.0])
+
+        hiA[1] = 2.0 * (K * K - 1.0) / (1.0 + K / Q + K * K)
+        hiA[2] = (1.0 - K / Q + K * K) / (1.0 + K / Q + K * K)
+
+        self.hiB = hiB
+        self.hiA = hiA
+    
+    def __call__(self, x: np.array):
+        assert x.ndim == 2 and x.shape[0] == 1
+        y = signal.lfilter(self.shelvB, self.shelvA, x, axis=1, zi=None)
+        y = signal.lfilter(self.hiB, self.hiA, y, axis=1, zi=None)
+        return y
