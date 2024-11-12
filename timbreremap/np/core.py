@@ -214,7 +214,7 @@ class KWeightingFilter:
         Q = 0.5003270373238773
         K = np.tan(np.pi * f0 / self.sr)
 
-        hiB = np.array([0.9946, -1.9892,  0.9946])
+        hiB = np.array([0.9946, -1.9892, 0.9946])
         hiA = np.array([1.0, 0.0, 0.0])
 
         hiA[1] = 2.0 * (K * K - 1.0) / (1.0 + K / Q + K * K)
@@ -222,7 +222,7 @@ class KWeightingFilter:
 
         self.hiB = hiB
         self.hiA = hiA
-    
+
     def __call__(self, x: np.array):
         assert x.ndim == 2 and x.shape[0] == 1
         y = signal.lfilter(self.shelvB, self.shelvA, x, axis=1, zi=None)
